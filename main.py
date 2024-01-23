@@ -1,3 +1,5 @@
+from random import randint
+
 import machine
 import time
 
@@ -44,18 +46,22 @@ print(wlan.ifconfig())
 print("Połączono z WiFi")
 
 # Dane Azure IoT Central
-MQTT_SERVER = 'mqtt.azure-devices.net'
+MQTT_SERVER = 'IOTprojekt.azure-devices.net'
 SCOPE_ID = ''
-DEVICE_ID = ''
-PRIMARY_KEY = ''
+DEVICE_ID = 'device1'
+PRIMARY_KEY = 'SharedAccessSignature sr=IOTprojekt.azure-devices.net%2Fdevices%2Fdevice1&sig=fcIQpH8Vo6eRSFH5sO80tUjFcojToevYxlJtKuEQAWs%3D&se=1708636469'
+USERNAME = '{}/{}/api-version=2018-06-30'.format(MQTT_SERVER, DEVICE_ID)
 
 # Konfiguracja MQTT
-MQTT_CLIENT = MQTTClient(client_id=DEVICE_ID, server=MQTT_SERVER, user=DEVICE_ID + "@" + SCOPE_ID, password=PRIMARY_KEY,
+MQTT_CLIENT = MQTTClient(client_id=DEVICE_ID, server=MQTT_SERVER, user=USERNAME, password=PRIMARY_KEY,
                          ssl=True)
 
+MQTT_CLIENT.connect()
+
+
 # Inicjalizacja I2C dla TMP102
-i2c = machine.I2C(scl=machine.Pin(22), sda=machine.Pin(21))
-TMP102_ADDR = 0x48
+# i2c = machine.I2C(scl=machine.Pin(22), sda=machine.Pin(21))
+# TMP102_ADDR = 0x48
 
 
 # Funkcja do wysyłania danych do Azure IoT Central

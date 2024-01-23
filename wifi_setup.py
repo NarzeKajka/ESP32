@@ -101,6 +101,7 @@ def ap_mode():
 
         if content['configured']:
             print('configured')
+            print(content['ssid'], content['password'])
             NEW_SSID = content['ssid']
             NEW_PASS = content['password']
         else:
