@@ -51,7 +51,7 @@ print("Połączono z WiFi")
 MQTT_SERVER = 'IOTprojekt.azure-devices.net'
 SCOPE_ID = ''
 DEVICE_ID = 'device1'
-PRIMARY_KEY = 'SharedAccessSignature sr=IOTprojekt.azure-devices.net%2Fdevices%2Fdevice1&sig=fcIQpH8Vo6eRSFH5sO80tUjFcojToevYxlJtKuEQAWs%3D&se=1708636469'
+PRIMARY_KEY = ''
 USERNAME = '{}/{}/api-version=2018-06-30'.format(MQTT_SERVER, DEVICE_ID)
 
 # Konfiguracja MQTT
