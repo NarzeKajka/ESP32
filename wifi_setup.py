@@ -17,6 +17,7 @@ iv = b'secret-iv-123456'
 # nie zmieniać:
 NEW_SSID = ''
 NEW_PASS = ''
+NEW_TOKEN = ''
 
 # tryb CBC
 
@@ -46,7 +47,7 @@ def response_ok(conn):
 
 
 def handle_request(conn, _conf):
-    global NEW_SSID, NEW_PASS
+    global NEW_SSID, NEW_PASS, NEW_TOKEN
     gc.collect()
     request = conn.recv(1024)
     request_str = request.decode('utf-8')
@@ -72,6 +73,7 @@ def handle_request(conn, _conf):
             _conf = False
             NEW_SSID = json_body['ssid']
             NEW_PASS = json_body['password']
+            NEW_TOKEN = json_body['token']
 
             response_ok(conn)
 
@@ -136,5 +138,6 @@ def ap_mode():
 
     print('SSID:', NEW_SSID)
     print('PASS:', NEW_PASS)
+    print('TOKEN:', NEW_TOKEN)
 
-    return NEW_SSID, NEW_PASS
+    return NEW_SSID, NEW_PASS, NEW_TOKEN

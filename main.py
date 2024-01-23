@@ -11,6 +11,8 @@ import time
 
 # Setup WiFi
 
+# TODO: odbieranie tokena z aplikacji
+
 def connect_to_wifi(wifi, essid, password, timeout):
     global ssid, pwd
     if not wifi.isconnected():
@@ -32,7 +34,7 @@ def connect_to_wifi(wifi, essid, password, timeout):
         return True
 
 
-ssid, pwd = wifi_setup.ap_mode()
+ssid, pwd, token = wifi_setup.ap_mode()
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
