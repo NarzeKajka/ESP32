@@ -1,12 +1,14 @@
 import json
 import os
 import cryptolib
+import gc
+import uos
 
 import network
 import socket
-from ubinascii import a2b_base64
+from binascii import a2b_base64
 
-STORE_FILE = 'configured'
+STORE_FILE = 'wificonf.json'
 SETUP_SSID = 'sensor'
 
 key = b'[verysecretaeskey256aaaaaaaaaaa]'
@@ -17,28 +19,25 @@ NEW_SSID = ''
 NEW_PASS = ''
 
 # tryb CBC
-crypto = cryptolib.aes(key, 2, iv)
 
-with open(STORE_FILE, 'w') as f:
-    f.write('false')
 
 #     TODO: zapisywanie zakończenia konfiguracji (true do pliku)
 
-if os.stat(STORE_FILE).st_size == 0:
+try:
+    with open(STORE_FILE, 'r') as f:
+        content = json.load(f)
+        print(content, len(content))
+
+        if content['configured']:
+            print('configured')
+        else:
+            print('not configured')
+except OSError as e:
     with open(STORE_FILE, 'w') as f:
-        f.write('{}')
-
-_conf = False
-
-with open(STORE_FILE, 'r') as f:
-    content = f.read().strip()
-    print(content, len(content))
-
-    if content == 'true':
-        print('configured')
-    else:
-        print('not configured')
-        _conf = True
+        json.dump({'configured': False}, f)
+# if uos.stat(STORE_FILE)[6] == 0:
+#     with open(STORE_FILE, 'w') as f:
+#         json.dump({'configured': False}, f)
 
 def response_ok(conn):
     response_body = json.dumps({'message': 'POST request received'})
@@ -49,8 +48,9 @@ def response_ok(conn):
     conn.sendall(response_body.encode('utf-8'))
 
 
-def handle_request(conn):
-    global _conf, NEW_SSID, NEW_PASS
+def handle_request(conn, _conf):
+    global NEW_SSID, NEW_PASS
+    gc.collect()
     request = conn.recv(1024)
     request_str = request.decode('utf-8')
 
@@ -58,8 +58,15 @@ def handle_request(conn):
 
     if headers.startswith('POST'):
         try:
-            unb64_ciphertext = a2b_base64(body.strip().encode())
             print('Encrypted:', body)
+            # print(len(body))
+            # print(body.strip().encode())
+            unb64_ciphertext = a2b_base64(body.strip().encode())
+            # print(len(unb64_ciphertext))
+            # # print(len(body))
+            # print(unb64_ciphertext)
+
+            crypto = cryptolib.aes(key, 2, iv)
             decrypted = crypto.decrypt(unb64_ciphertext)
 
             pad = decrypted[-1]
@@ -73,37 +80,65 @@ def handle_request(conn):
             _conf = False
             NEW_SSID = json_body['ssid']
             NEW_PASS = json_body['password']
+
+            response_ok(conn)
+
+            return True
         except ValueError as e:
             print('Invalid data', e)
             print('Invalid data')
+            response_ok(conn)
 
-        response_ok(conn)
+            return False
+
+
     else:
         conn.sendall('HTTP/1.1 400 Bad Request\r\n\r\n'.encode('utf-8'))
 
     conn.close()
 
 
-if _conf:
-    ap = network.WLAN(network.AP_IF)
-    ap.active(True)
-    ap.config(essid=SETUP_SSID)
+def ap_mode():
+    _conf = False
 
-    print('SSID:', ap.config('essid'))
+    with open(STORE_FILE, 'r') as f:
+        # content = f.read().strip()
+        content = json.load(f)
+        print(content, len(content))
 
-    while ap.active() == False:
-        pass
+        if content['configured']:
+            print('configured')
+        else:
+            print('not configured')
+            _conf = True
 
-    print('AP active')
+    if _conf:
+        ap = network.WLAN(network.AP_IF)
+        ap.active(True)
+        ap.config(essid=SETUP_SSID)
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('', 80))
-    s.listen(5)
+        print('SSID:', ap.config('essid'))
 
-    while _conf:
-        conn, addr = s.accept()
-        print('Got a connection from %s' % str(addr))
-        handle_request(conn)
+        while ap.active() == False:
+            pass
 
-print('SSID:', NEW_SSID)
-print('PASS:', NEW_PASS)
+        print('AP active')
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('', 80))
+        s.listen(5)
+
+        while _conf:
+            conn, addr = s.accept()
+            print('Got a connection from %s' % str(addr))
+            _conf = not handle_request(conn, _conf)
+            print(_conf)
+
+        # close socket and AP
+        s.close()
+        ap.active(False)
+
+    print('SSID:', NEW_SSID)
+    print('PASS:', NEW_PASS)
+
+    return NEW_SSID, NEW_PASS

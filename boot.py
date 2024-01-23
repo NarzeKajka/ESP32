@@ -19,7 +19,8 @@ def connectToWifi(wifi, essid, password, timeout):
                 wifi.disconnect()
                 print("Timeout. Could not connect.")
                 ssid, pwd = wifi_setup.ap_mode()
-                return False
+                return connectToWifi(wifi, ssid, pwd, timeout)
+                # return False
         print("Successfully connected to " + essid)
         return True
     else:
