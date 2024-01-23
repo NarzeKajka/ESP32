@@ -34,10 +34,7 @@ try:
             print('not configured')
 except OSError as e:
     with open(STORE_FILE, 'w') as f:
-        json.dump({'configured': False}, f)
-# if uos.stat(STORE_FILE)[6] == 0:
-#     with open(STORE_FILE, 'w') as f:
-#         json.dump({'configured': False}, f)
+        json.dump({'configured': False, 'ssid': '', 'password': ''}, f)
 
 def response_ok(conn):
     response_body = json.dumps({'message': 'POST request received'})
@@ -59,12 +56,7 @@ def handle_request(conn, _conf):
     if headers.startswith('POST'):
         try:
             print('Encrypted:', body)
-            # print(len(body))
-            # print(body.strip().encode())
             unb64_ciphertext = a2b_base64(body.strip().encode())
-            # print(len(unb64_ciphertext))
-            # # print(len(body))
-            # print(unb64_ciphertext)
 
             crypto = cryptolib.aes(key, 2, iv)
             decrypted = crypto.decrypt(unb64_ciphertext)
@@ -99,6 +91,7 @@ def handle_request(conn, _conf):
 
 
 def ap_mode():
+    global NEW_SSID, NEW_PASS
     _conf = False
 
     with open(STORE_FILE, 'r') as f:
@@ -108,6 +101,8 @@ def ap_mode():
 
         if content['configured']:
             print('configured')
+            NEW_SSID = content['ssid']
+            NEW_PASS = content['password']
         else:
             print('not configured')
             _conf = True
