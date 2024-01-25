@@ -24,18 +24,7 @@ NEW_TOKEN = ''
 
 #     TODO: zapisywanie zakończenia konfiguracji (true do pliku)
 
-try:
-    with open(STORE_FILE, 'r') as f:
-        content = json.load(f)
-        print(content, len(content))
 
-        if content['configured']:
-            print('configured')
-        else:
-            print('not configured')
-except OSError as e:
-    with open(STORE_FILE, 'w') as f:
-        json.dump({'configured': False, 'ssid': '', 'password': ''}, f)
 
 def response_ok(conn):
     response_body = json.dumps({'message': 'POST request received'})
@@ -81,7 +70,7 @@ def handle_request(conn, _conf):
         except ValueError as e:
             print('Invalid data', e)
             print('Invalid data')
-            response_ok(conn)
+            conn.sendall('HTTP/1.1 400 Bad Request\r\n\r\n'.encode('utf-8'))
 
             return False
 
